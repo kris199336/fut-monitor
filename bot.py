@@ -1,5 +1,6 @@
 import json
-import requests
+import re
+import cloudscraper
 
 def load_config():
     with open('config.json', 'r', encoding='utf-8') as f:
@@ -10,31 +11,37 @@ def save_config(config):
         json.dump(config, f, indent=2, ensure_ascii=False)
 
 def get_player_price(player_url):
+    scraper = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'desktop': True
+        }
+    )
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Referer": "https://www.futbin.com/"
+    }
+    
     try:
-        # Wyciągamy ID gracza z linku futbin (np. /27/player/23168/...)
-        parts = player_url.strip("/").split("/")
-        if "player" in parts:
-            player_id_index = parts.index("player") + 1
-            if player_id_index < len(parts):
-                player_id = parts[player_id_index]
-                
-                # Oficjalny endpoint API Futbin dla cen PS
-                api_url = f"https://www.futbin.com/27/playerPrices?player={player_id}"
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": player_url
-                }
-                
-                response = requests.get(api_url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    # Sprawdzamy dane dla konkretnego ID
-                    if player_id in data:
-                        prices = data[player_id].get("prices", {})
-                        # Pobieramy cenę z PS (lub alternatywnych platform)
-                        ps_price = prices.get("PS", {}).get("S")
-                        if ps_price:
-                            return int(str(ps_price).replace(",", ""))
+        response = scraper.get(player_url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            # Szukanie ceny bezpośrednio w kodzie źródłowym HTML Futbina
+            match = re.search(r'id="(?:ps-price|xbox-price|pc-price)"[^>]*>\s*([\d,.]+)\s*<', response.text)
+            if match:
+                raw_price = match.group(1).replace(',', '').replace('.', '').strip()
+                if raw_price.isdigit():
+                    return int(raw_price)
+            
+            # Wersja zapasowa: szukanie danych cenowych w strukturze JSON wbudowanej w stronę
+            match_json = re.search(r'"LCPrice":\s*(\d+)', response.text)
+            if match_json:
+                return int(match_json.group(1))
+        else:
+            print(f"Błąd HTTP {response.status_code} dla URL: {player_url}")
+            
     except Exception as e:
         print(f"Błąd podczas pobierania ceny dla {player_url}: {e}")
         
@@ -44,7 +51,7 @@ def main():
     config = load_config()
     webhook_url = config.get("webhook_url")
     
-    print("Rozpoczynam sprawdzanie cen zawodników via API Futbin...")
+    print("Rozpoczynam sprawdzanie cen zawodników...")
     
     for player in config.get("players", []):
         name = player.get("name")
@@ -66,6 +73,7 @@ def main():
                 message = {
                     "content": f"🚨 **OKAZJA CENOWA!** 🚨\nZawodnik: **{name}**\nAktualna cena: **{current_price:,}** (Twój limit: **{max_price:,}**)\nLink: {url}"
                 }
+                import requests
                 requests.post(webhook_url, json=message)
                 player["alert_active"] = True
                 print(f"Wysłano powiadomienie dla {name}!")
@@ -74,11 +82,7 @@ def main():
                 player["alert_active"] = False
                 print(f"Cena {name} wzrosła ponad limit. Resetuję flagę alertu.")
 
-    save_config(config)
-
-if __name__ == "__main__":
-    main()
-    # Zapisz zaktualizowany stan flag do config.json
+    # Zapis stanu wewnątrz funkcji main()
     save_config(config)
 
 if __name__ == "__main__":
