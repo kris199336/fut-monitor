@@ -1,17 +1,17 @@
 {
-  "webhook_url": "https://discord.com/api/webhooks/1429819777243930727/YVq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V",
-  "players": [
-    {
-      "name": "Harry Kewell",
-      "url": "https://www.futbin.com/27/player/21660/kewell",
-      "max_price": 500000,
-      "alert_active": false
-    },
-    {
-      "name": "Roy Makaay",
-      "url": "https://www.futbin.com/27/player/21648/makaay",
-      "max_price": 400000,
-      "alert_active": false
-    }
-  ]
+    "webhook_url": "https://discord.com/api/webhooks/1429819777243930727/YVq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V_7GvWd2Gj2Vq5V",
+    "players": [
+        {
+            "name": "Harry Kewell",
+            "url": "https://www.futbin.com/27/player/21660/kewell",
+            "max_price": 500000,
+            "alert_active": false
+        },
+        {
+            "name": "Roy Makaay",
+            "url": "https://www.futbin.com/27/player/21648/makaay",
+            "max_price": 400000,
+            "alert_active": false
+        }
+    ]
 }
