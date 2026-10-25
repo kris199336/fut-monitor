@@ -1,6 +1,4 @@
 import json
-import re
-import cloudscraper
 import requests
 
 def load_config():
@@ -12,39 +10,38 @@ def save_config(config):
         json.dump(config, f, indent=2, ensure_ascii=False)
 
 def get_player_price(player_url):
-    scraper = cloudscraper.create_scraper(
-        browser={
-            'browser': 'chrome',
-            'platform': 'windows',
-            'desktop': True
-        }
-    )
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Referer": "https://www.futbin.com/"
-    }
-    
     try:
-        response = scraper.get(player_url, headers=headers, timeout=15)
-        print(f"Status HTTP dla {player_url}: {response.status_code}")
-        if response.status_code == 200:
-            match = re.search(r'id="(?:ps-price|xbox-price|pc-price)"[^>]*>\s*([\d,.]+)\s*<', response.text)
-            if match:
-                raw_price = match.group(1).replace(',', '').replace('.', '').strip()
-                print(f"Znaleziono cenę (regex): {raw_price}")
-                if raw_price.isdigit():
-                    return int(raw_price)
-            
-            match_json = re.search(r'"LCPrice":\s*(\d+)', response.text)
-            if match_json:
-                print(f"Znaleziono cenę (JSON): {match_json.group(1)}")
-                return int(match_json.group(1))
+        # Wyciąganie ID gracza z linku Futbin (np. /27/player/23168/...)
+        parts = player_url.strip("/").split("/")
+        if "player" in parts:
+            player_id_index = parts.index("player") + 1
+            if player_id_index < len(parts):
+                player_id = parts[player_id_index]
                 
-            print("Ostrzeżenie: Strona się załadowała, ale nie dopasowano wzorca ceny w HTML.")
+                # Oficjalny endpoint API cenowym Futbina
+                api_url = f"https://www.futbin.com/27/playerPrices?player={player_id}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                    "Referer": player_url,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+                
+                response = requests.get(api_url, headers=headers, timeout=15)
+                print(f"API Status dla ID {player_id}: {response.status_code}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if player_id in data:
+                        prices = data[player_id].get("prices", {})
+                        # Pobieramy cenę z PS (można zmienić na XBOX lub PC w razie potrzeby)
+                        ps_price = prices.get("PS", {}).get("S")
+                        if ps_price:
+                            clean_price = str(ps_price).replace(",", "").replace(".", "").strip()
+                            if clean_price.isdigit():
+                                return int(clean_price)
+        
     except Exception as e:
-        print(f"Błąd wyjątku dla {player_url}: {e}")
+        print(f"Błąd API dla {player_url}: {e}")
         
     return None
 
@@ -52,7 +49,7 @@ def main():
     config = load_config()
     webhook_url = config.get("webhook_url")
     
-    print("Rozpoczynam sprawdzanie cen zawodników...")
+    print("Rozpoczynam sprawdzanie cen przez API Futbin...")
     
     for player in config.get("players", []):
         name = player.get("name")
