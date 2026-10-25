@@ -2,7 +2,7 @@ name: FUT Monitor Bot
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/3 * * * *'
   workflow_dispatch:
 
 jobs:
