@@ -11,29 +11,39 @@ def save_config(config):
 
 def get_player_price(player_url):
     try:
-        # Wyciąganie ID gracza z linku Futbin (np. /27/player/23168/...)
         parts = player_url.strip("/").split("/")
         if "player" in parts:
             player_id_index = parts.index("player") + 1
             if player_id_index < len(parts):
                 player_id = parts[player_id_index]
                 
-                # Oficjalny endpoint API cenowym Futbina
                 api_url = f"https://www.futbin.com/27/playerPrices?player={player_id}"
+                
+                # Udajemy pełnoprawną przeglądarkę Chrome na Windowsie z autentycznymi nagłówkami
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/javascript, */*; q=0.01",
+                    "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+                    "Accept-Encoding": "gzip, deflate, br",
                     "Referer": player_url,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Sec-Ch-Ua": '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"Windows"',
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-origin"
                 }
                 
-                response = requests.get(api_url, headers=headers, timeout=15)
+                # Używamy sesji, żeby zachować ewentualne ciasteczka sesyjne
+                session = requests.Session()
+                response = session.get(api_url, headers=headers, timeout=15)
                 print(f"API Status dla ID {player_id}: {response.status_code}")
                 
                 if response.status_code == 200:
                     data = response.json()
                     if player_id in data:
                         prices = data[player_id].get("prices", {})
-                        # Pobieramy cenę z PS (można zmienić na XBOX lub PC w razie potrzeby)
                         ps_price = prices.get("PS", {}).get("S")
                         if ps_price:
                             clean_price = str(ps_price).replace(",", "").replace(".", "").strip()
