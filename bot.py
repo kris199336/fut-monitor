@@ -27,10 +27,10 @@ def get_futbin_price(url):
         
         html = response.text
         
-        match = re.search(r'"ps_price"\s*:\s*"([0-9,]+)"', html, re.IGNORECASE) or \
-                re.search(r'"ps"\s*:\s*"?([0-9]+)"?', html, re.IGNORECASE) or \
-                re.search(r'class=["\'][^"\']*price-value[^"\']*["'][^>]*>([\d,.]+)', html, re.IGNORECASE) or \
-                re.search(r'item-price["\'][^>]*>([\d,.]+)', html, re.IGNORECASE)
+        # Uproszczone wyszukiwanie ceny w kodzie strony
+        match = re.search(r'"ps_price"\s*:\s*"([0-9,]+)"', html, re.IGNORECASE)
+        if not match:
+            match = re.search(r'"ps"\s*:\s*"?([0-9]+)"?', html, re.IGNORECASE)
                 
         if match:
             clean_price = match.group(1).replace(',', '').replace('.', '')
