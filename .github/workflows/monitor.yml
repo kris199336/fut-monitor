@@ -3,7 +3,7 @@ name: FUT Monitor Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *'  # uruchamia się co 2 godziny (lub tak jak masz ustawione)
+    - cron: '0 */2 * * *'
 
 jobs:
   run-bot:
@@ -31,7 +31,3 @@ jobs:
       with:
         commit_message: "Auto-update alert flags"
         branch: main
-      - name: Commit state changes back to repo
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Automatyczna aktualizacja statusu alertów bota"
