@@ -4,7 +4,7 @@
     {
       "name": "Donnarumma 90 IF",
       "url": "https://www.futbin.com/27/player/23168/gianluigi-donnarumma",
-      "max_price": 195000,
+      "max_price": 500000,
       "alert_active": false
     },
     {
@@ -146,10 +146,4 @@
       "alert_active": false
     }
   ]
-}
-            "url": "https://www.futbin.com/27/player/cucurella",
-            "max_price": 190000,
-            "alert_active": false
-        }
-    ]
 }
