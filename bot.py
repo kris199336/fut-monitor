@@ -50,6 +50,7 @@ def send_discord_alert(webhook_url, player_name, price, max_price):
 
 def main():
     config = load_config()
+    requests.post(config.get("webhook_url"), json={"content": "🚨 TESTOWA WIADOMOŚĆ Z BOTA!"})
     webhook_url = config.get("webhook_url")
     
     for player in config.get("players", []):
