@@ -1,31 +1,36 @@
 name: FUT Monitor Bot
 
 on:
-  schedule:
-    - cron: '*/3 * * * *'
   workflow_dispatch:
+  schedule:
+    - cron: '0 */2 * * *'  # uruchamia się co 2 godziny (lub tak jak masz ustawione)
 
 jobs:
   run-bot:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install cloudscraper requests
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests cloudscraper
 
-      - name: Run script
-        run: python bot.py
+    - name: Run python bot.py
+      run: python bot.py
 
+    - name: Commit updated config
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Auto-update alert flags"
+        branch: main
       - name: Commit state changes back to repo
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
