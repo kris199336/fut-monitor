@@ -1,6 +1,7 @@
 import json
 import re
 import cloudscraper
+import requests
 
 def load_config():
     with open('config.json', 'r', encoding='utf-8') as f:
@@ -27,23 +28,23 @@ def get_player_price(player_url):
     
     try:
         response = scraper.get(player_url, headers=headers, timeout=15)
+        print(f"Status HTTP dla {player_url}: {response.status_code}")
         if response.status_code == 200:
-            # Szukanie ceny bezpośrednio w kodzie źródłowym HTML Futbina
             match = re.search(r'id="(?:ps-price|xbox-price|pc-price)"[^>]*>\s*([\d,.]+)\s*<', response.text)
             if match:
                 raw_price = match.group(1).replace(',', '').replace('.', '').strip()
+                print(f"Znaleziono cenę (regex): {raw_price}")
                 if raw_price.isdigit():
                     return int(raw_price)
             
-            # Wersja zapasowa: szukanie danych cenowych w strukturze JSON wbudowanej w stronę
             match_json = re.search(r'"LCPrice":\s*(\d+)', response.text)
             if match_json:
+                print(f"Znaleziono cenę (JSON): {match_json.group(1)}")
                 return int(match_json.group(1))
-        else:
-            print(f"Błąd HTTP {response.status_code} dla URL: {player_url}")
-            
+                
+            print("Ostrzeżenie: Strona się załadowała, ale nie dopasowano wzorca ceny w HTML.")
     except Exception as e:
-        print(f"Błąd podczas pobierania ceny dla {player_url}: {e}")
+        print(f"Błąd wyjątku dla {player_url}: {e}")
         
     return None
 
@@ -73,7 +74,6 @@ def main():
                 message = {
                     "content": f"🚨 **OKAZJA CENOWA!** 🚨\nZawodnik: **{name}**\nAktualna cena: **{current_price:,}** (Twój limit: **{max_price:,}**)\nLink: {url}"
                 }
-                import requests
                 requests.post(webhook_url, json=message)
                 player["alert_active"] = True
                 print(f"Wysłano powiadomienie dla {name}!")
@@ -82,7 +82,6 @@ def main():
                 player["alert_active"] = False
                 print(f"Cena {name} wzrosła ponad limit. Resetuję flagę alertu.")
 
-    # Zapis stanu wewnątrz funkcji main()
     save_config(config)
 
 if __name__ == "__main__":
